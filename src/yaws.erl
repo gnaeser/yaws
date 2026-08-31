@@ -2855,10 +2855,17 @@ http_collect_headers(CliSock, Req, H, SSL, Count) when Count < 1000 ->
         {ok, {http_header, _Num, 'Location', _, X}} ->
             http_collect_headers(CliSock, Req, H#headers{location=X},
                                  SSL, Count+1);
-        {ok, {http_header, _Num, 'Authorization', _, X}} ->
-            http_collect_headers(CliSock, Req,
-                                 H#headers{authorization = parse_auth(X)},
-                                 SSL, Count+1);
+        {ok, {http_header, _Num, 'Authorization', _UnmodifiedHeader, X}} ->
+            case H#headers.authorization of
+                undefined ->
+                    http_collect_headers(
+                      CliSock, Req,
+                      H#headers{authorization = parse_auth(X)},
+                      SSL, Count+1);
+                _ ->
+                    {error, {multiple_authorization_headers,
+                             Req#http_request{method = bad_request}}}
+            end;
         {ok, {http_header, _Num, 'X-Forwarded-For', _, X}} ->
             case H#headers.x_forwarded_for of
                 undefined ->

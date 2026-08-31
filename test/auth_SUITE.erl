@@ -8,6 +8,7 @@
 all() ->
     [
      basic_auth,
+     multiple_authorization_headers,
      basic_auth_with_docroot,
      basic_auth_subdirs,
      auth_with_authmod,
@@ -81,6 +82,18 @@ basic_auth(Config) ->
     ?assertMatch({ok, {{_,200,_}, _, _}}, testsuite:http_get(Url, [Auth3])),
     ?assertMatch({ok, {{_,200,_}, _, _}}, testsuite:http_get(Url, [Auth4])),
     ?assertMatch({ok, {{_,200,_}, _, _}}, testsuite:http_get(Url, [Auth5])),
+    ok.
+
+multiple_authorization_headers(Config) ->
+    Port = testsuite:get_yaws_port(1, Config),
+    Url  = testsuite:make_url(http, "127.0.0.1", Port, "/test1/a.txt"),
+    Auth1 = auth_header("foo", "bar"),
+    Auth2 = auth_header("foo", "baz"),
+
+    ?assertMatch({ok, {{_,400,_}, _, _}},
+                 testsuite:http_get(Url, [Auth1, Auth2])),
+    ?assertMatch({ok, {{_,400,_}, _, _}},
+                 testsuite:http_get(Url, [Auth1, Auth1])),
     ok.
 
 basic_auth_with_docroot(Config) ->
